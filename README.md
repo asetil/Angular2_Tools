@@ -14,3 +14,5 @@ Create your custom css for appereance or use my "datepicker.css" codes for defau
 For icons like "fa fa-calendar" i'm using "Font-Avesome" and "Twitter Bootstrap" handle big job at background.
 
 Just this, change it, play with it, create your own one for your need, have fun..
+
+![alt text](https://raw.githubusercontent.com/asetil/Angular2_Tools/master/datepicker/aw_datepicker.png),
