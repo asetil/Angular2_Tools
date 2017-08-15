@@ -1,10 +1,10 @@
-import { Component, Input, Output} from '@angular/core';
+import { Component, Input, Output } from '@angular/core';
 
 @Component({
     selector: "aw-datepicker",
     template: `<div class="date-picker">
                 <div class="preview"  (click)="toggle()">
-                   <input type="text" [id]="id" [name]="id" class="form-control" #txtInput [(ngModel)]="selectedDate"/>
+                   <input type="text" [id]="controlID" [name]="controlID" class="form-control" [(ngModel)]="dateText" (keyup)="refreshDate()"/>
                    <i class="fa fa-calendar"></i>
                 </div>
                    <div class="date-panel" [class.open]="open">
@@ -15,7 +15,7 @@ import { Component, Input, Output} from '@angular/core';
                        </div>
                        <table class="table">
                         <tr class="head"> 
-                            <td *ngFor="let cell of nameRow">{{cell}}</td>
+                            <td *ngFor="let cell of dayNames">{{cell}}</td>
                         </tr>
 
                         <tr *ngFor="let row of dateRows"> 
@@ -27,39 +27,54 @@ import { Component, Input, Output} from '@angular/core';
                    </div>
               </div>`
 })
-export class DatePickerComponent {     
-    @Input() value: Date;
-    @Input() id: string;
+export class DatePickerComponent {
+    @Input("value") selectedDate: Date;
+    @Input("id") controlID: string;
 
-    private currentDate: Date;    
-    private selectedDate: Date;
+    private currentDate: Date;
+    private dateText: string;
+
+    private sundayFirst = false; //set false if Monday first day
     private open = false;
-
-    private sundayFirst=false; //set false if Monday first day
-    private nameRow = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
     private dateRows = [];
 
     ngOnInit() {
-        this.value = this.value || new Date();
-        this.selectedDate = this.value;
-        this.currentDate = this.value;
-        this.loadDateInfo();
+        this.selectedDate = this.selectedDate || new Date();
+        this.currentDate = this.selectedDate;
+        this.dateText = this.getDateText(this.selectedDate);
+        this.refreshDatePanel();
+    }
+
+    refreshDate() {
+        let dateParts = this.dateText.replace(/\//g, ".").replace(/-/g, ".").split(".");
+        if (dateParts.length == 3) {
+            let day = parseInt(dateParts[0]);
+            let month = parseInt(dateParts[1]);
+            let year = parseInt(dateParts[2]);
+
+            if (day > 0 && day <= 31 && month > 0 && month <= 12 && year > 1917 && year < 2030) {
+                this.selectedDate = new Date(Date.UTC(year, month - 1, day));
+                this.currentDate = this.selectedDate;
+                this.refreshDatePanel();
+            }
+        }
     }
 
     setDate(day: string) {
         this.selectedDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), +day);
-        this.loadDateInfo();
-        this.open =false;
+        this.dateText = this.getDateText(this.selectedDate);
+        this.refreshDatePanel();
+        this.open = false;
     }
 
     prevMonth() {
         this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() - 1, 1);
-        this.loadDateInfo();
+        this.refreshDatePanel();
     }
 
     nextMonth() {
         this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 1);
-        this.loadDateInfo();
+        this.refreshDatePanel();
     }
 
     toggle() {
@@ -69,8 +84,10 @@ export class DatePickerComponent {
     private prevMonthName: string = "";
     private currentName: string = "";
     private nextMonthName: string = "";
+    private dayNames = ["Pz", "Pt", "Sa", "Ça", "Pe", "Cu", "Ct"];
+    private monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 
-    loadDateInfo() {
+    refreshDatePanel() {
         var m = this.currentDate.getMonth();
         var y = this.currentDate.getFullYear();
 
@@ -84,10 +101,10 @@ export class DatePickerComponent {
 
         let day = startDate.getDay();
         if (!this.sundayFirst) {
-            this.nameRow = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+            this.dayNames = ["Pt", "Sa", "Ça", "Pe", "Cu", "Ct", "Pz"];
             day = day == 0 ? 6 : day - 1;
         }
-        
+
         var today = new Date();
         var inRange = this.selectedDate >= startDate && this.selectedDate <= endDate;
         var hasToday = today >= startDate && today <= endDate;
@@ -121,24 +138,13 @@ export class DatePickerComponent {
     getMonthName(index: number, length: number = 0): string {
         if (index == -1) { index = 11; }
         if (index == 12) { index = 0; }
+        let name = this.monthNames[index];
 
-        var result = "";
-        switch (index) {
-            case 0: result = "January"; break;
-            case 1: result = "February"; break;
-            case 2: result = "March"; break;
-            case 3: result = "April"; break;
-            case 4: result = "May"; break;
-            case 5: result = "June"; break;
-            case 6: result = "July"; break;
-            case 7: result = "August"; break;
-            case 8: result = "Sebtember"; break;
-            case 9: result = "October"; break;
-            case 10: result = "November"; break;
-            case 11: result = "December"; break;
-        }
+        if (length > 0 && name.length > length) { name = name.substring(0, length); }
+        return name;
+    }
 
-        if (length > 0 && result.length > length) { result = result.substring(0, length); }
-        return result;
+    getDateText(date: Date): string {
+        return date.toLocaleDateString();
     }
 }
