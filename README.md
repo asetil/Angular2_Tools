@@ -6,13 +6,18 @@ datepicker at https://material.angular.io/components/datepicker/overview
 
 Actually i tried to use it firstly with great effort. First "Install Angular Material and Angular CDK", then add "Animations" then bla bla.
 But this must not be so hard to add a simple component to a project. At this point i came out with an idea of why i'm not writing my own
-component. And aw_datepicker was born.
+component. And <b><u>aw_datepicker</u></b> was born.
 
-Just add "datepicker.component.ts" file to your Angular Components folder. From App.Module register it via NgModule.
-Create your custom css for appereance or use my "datepicker.css" codes for default appereance. And lastly use it like at "demo.html"
+To use it with minimum effort, just <b>datepicker.component.ts</b> file to your "Angular Components" folder. Then register this new componenet from your "App.Module" via NgModule. Just this!
 
-For icons like "fa fa-calendar" i'm using "Font-Avesome" and "Twitter Bootstrap" handle big job at background.
+To customize ppereance you can apply any css you want or for default appereance use css codes from <b><u>datepicker.css</u></b> file.
 
-Just this, change it, play with it, create your own one for your need, have fun..
+And lastly, to use it in your form as form control, check usage <b><u>demo.html</u></b> file
+
+For icons like "fa fa-calendar" you can use "Font-Avesome", and for css styling "Twitter Bootstrap" can be used.
+
+Play with it, change it for your own purpose. That's all!
+
+Example Preview :
 
 ![alt text](https://raw.githubusercontent.com/asetil/Angular2_Tools/master/datepicker/aw_datepicker.png),
