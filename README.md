@@ -8,9 +8,9 @@ Actually i tried to use it firstly with great effort. First "Install Angular Mat
 But this must not be so hard to add a simple component to a project. At this point i came out with an idea of why i'm not writing my own
 component. And <b><u>aw_datepicker</u></b> was born.
 
-To use it with minimum effort, just <b>datepicker.component.ts</b> file to your "Angular Components" folder. Then register this new componenet from your "App.Module" via NgModule. Just this!
+To use it with minimum effort, just add <b>datepicker.component.ts</b> file to your "Angular Components" folder. Then register this new componenet from your "Application.Module" in NgModule declarations. Just this!
 
-To customize ppereance you can apply any css you want or for default appereance use css codes from <b><u>datepicker.css</u></b> file.
+To customize appearance you can apply any css you want or for default appearance use css codes from <b><u>datepicker.css</u></b> file.
 
 And lastly, to use it in your form as form control, check usage <b><u>demo.html</u></b> file
 
