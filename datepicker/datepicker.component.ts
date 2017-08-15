@@ -3,7 +3,7 @@ import { Component, Input, Output} from '@angular/core';
 @Component({
     selector: "aw-datepicker",
     template: `<div class="date-picker">
-                <div class="preview"  (click)="toggleSelect()">
+                <div class="preview"  (click)="toggle()">
                    <input type="text" [id]="id" [name]="id" class="form-control" #txtInput [(ngModel)]="selectedDate"/>
                    <i class="fa fa-calendar"></i>
                 </div>
@@ -27,15 +27,16 @@ import { Component, Input, Output} from '@angular/core';
                    </div>
               </div>`
 })
-export class DatePickerComponent {
+export class DatePickerComponent {     
     @Input() value: Date;
     @Input() id: string;
 
-    private currentDate: Date;
+    private currentDate: Date;    
     private selectedDate: Date;
-    private open: boolean = false;
+    private open = false;
 
-    private nameRow = ["P", "S", "Ç", "P", "C", "CT", "PZ"];
+    private sundayFirst=false; //set false if Monday first day
+    private nameRow = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
     private dateRows = [];
 
     ngOnInit() {
@@ -61,7 +62,7 @@ export class DatePickerComponent {
         this.loadDateInfo();
     }
 
-    toggleSelect() {
+    toggle() {
         this.open = !this.open;
     }
 
@@ -82,8 +83,11 @@ export class DatePickerComponent {
         this.currentName = y + " " + this.getMonthName(m, 3);
 
         let day = startDate.getDay();
-        day = day == 0 ? 6 : day - 1;
-
+        if (!this.sundayFirst) {
+            this.nameRow = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+            day = day == 0 ? 6 : day - 1;
+        }
+        
         var today = new Date();
         var inRange = this.selectedDate >= startDate && this.selectedDate <= endDate;
         var hasToday = today >= startDate && today <= endDate;
@@ -98,7 +102,7 @@ export class DatePickerComponent {
         this.dateRows.push(rowArray);
 
         var ind = 7 - day + 1;
-        while (ind < monthDays) {
+        while (ind <= monthDays) {
             rowArray = [];
             for (var j = ind; j < ind + 7; j++) {
                 rowArray[j - ind] = { v: "", t: 0, c: 0 };
