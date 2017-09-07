@@ -1,19 +1,19 @@
-import { Component, Input, Output } from '@angular/core';
+import { Component, Input, Output, EventEmitter, Renderer, ElementRef } from "@angular/core";
 
 @Component({
     selector: "aw-datepicker",
     template: `<div class="date-picker">
-                <div class="preview"  (click)="toggle()">
-                   <input type="text" [id]="controlID" [name]="controlID" class="form-control" [(ngModel)]="dateText" (keyup)="refreshDate()"/>
+                <div class="preview"  (click)="open = !open">
+                   <input type="text" [id]="controlID" [name]="controlID" class="form-control" [(ngModel)]="dateText" (keyup)="refreshDate()" autocomplete="off"/>
                    <i class="fa fa-calendar"></i>
                 </div>
-                   <div class="date-panel" [class.open]="open">
+                   <div class="date-panel" [class.open]="open" >
                        <div class="navigation">
-                            <span class="fl" (click)="prevMonth()"><i class="fa fa-chevron-left"></i>&nbsp;&nbsp;{{prevMonthName}}</span>
-                            <span class="">{{currentName}}</span>
-                            <span class="fr" (click)="nextMonth()">{{nextMonthName}}&nbsp;&nbsp;<i class="fa fa-chevron-right"></i></span>
+                            <span class="fl" (click)="navigate(-1)"><i class="fa fa-chevron-left"></i>&nbsp;&nbsp;{{prevLabel}}</span>
+                            <div class="current-date" (click)="changeViewMode(1)">{{currentName}}</div>
+                            <span class="fr" (click)="navigate(1)">{{nextLabel}}&nbsp;&nbsp;<i class="fa fa-chevron-right"></i></span>
                        </div>
-                       <table class="table">
+                       <table class="table" *ngIf="viewMode<=0">
                         <tr class="head"> 
                             <td *ngFor="let cell of dayNames">{{cell}}</td>
                         </tr>
@@ -24,12 +24,21 @@ import { Component, Input, Output } from '@angular/core';
                             </td>
                         </tr>
                        </table>
+                       <div class="monthyear-panel" *ngIf="viewMode==1">
+                            <div *ngFor="let month of monthNames;let ind = index" (click)="navigate(0,ind)">
+                                {{month | short:3:""}}
+                            </div>
+                       </div>
+                       <div class="monthyear-panel year-panel" *ngIf="viewMode==2">
+                            <div *ngFor="let year of yearList" (click)="navigate(0,year)">{{year}}</div>
+                       </div>
                    </div>
               </div>`
 })
 export class DatePickerComponent {
     @Input("value") selectedDate: Date;
     @Input("id") controlID: string;
+    @Output("valueChange") selectedDateChange = new EventEmitter<Date>();
 
     private currentDate: Date;
     private dateText: string;
@@ -37,10 +46,22 @@ export class DatePickerComponent {
     private sundayFirst = false; //set false if Monday first day
     private open = false;
     private dateRows = [];
+    private viewMode = 0;
+    private yearList = [];
+
+    private minYear = 1850;
+    private maxYear = 2099;
+
+    // listeners
+    clickListener: Function;
+
+    constructor(private renderer: Renderer, private elementRef: ElementRef) {
+        this.clickListener = renderer.listenGlobal("document", "click",(event: MouseEvent) => this.handleGlobalClick(event));
+    }
 
     ngOnInit() {
-        this.selectedDate = this.selectedDate || new Date();
-        this.currentDate = this.selectedDate;
+        this.selectedDate = this.getDate(this.selectedDate);
+        this.currentDate = this.selectedDate || new Date();
         this.dateText = this.getDateText(this.selectedDate);
         this.refreshDatePanel();
     }
@@ -52,11 +73,14 @@ export class DatePickerComponent {
             let month = parseInt(dateParts[1]);
             let year = parseInt(dateParts[2]);
 
-            if (day > 0 && day <= 31 && month > 0 && month <= 12 && year > 1917 && year < 2030) {
+            if (day > 0 && day <= 31 && month > 0 && month <= 12 && year > 1850 && year < 2030) {
                 this.selectedDate = new Date(Date.UTC(year, month - 1, day));
                 this.currentDate = this.selectedDate;
                 this.refreshDatePanel();
             }
+        } else {
+            this.selectedDate = null;
+            this.refreshDatePanel();
         }
     }
 
@@ -67,23 +91,50 @@ export class DatePickerComponent {
         this.open = false;
     }
 
-    prevMonth() {
-        this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() - 1, 1);
-        this.refreshDatePanel();
+    navigate(inc: number, value: number = -1) {
+        if (this.viewMode == 2) {
+            let yy = (value >= 0 ? value : this.currentDate.getFullYear()) + (12 * inc);
+            if (yy < this.minYear) { yy = this.minYear+6; }
+            if (yy > this.maxYear) { yy = this.maxYear-5; }
+            this.currentDate = new Date(yy, 1, 1);
+        }
+        else {
+            let mm = (value >= 0 ? value : this.currentDate.getMonth()) + inc;
+            this.currentDate = new Date(this.currentDate.getFullYear(), mm, 1);
+        }
+
+        if (value >= 0 || this.viewMode > 0) {
+            this.changeViewMode(value >= 0 ? -1 : 0);
+        } else {
+            this.refreshDatePanel();
+        }
     }
 
-    nextMonth() {
-        this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 1);
-        this.refreshDatePanel();
+    changeViewMode(inc: number) {
+        this.viewMode += inc;
+        this.viewMode = this.viewMode < 0 ? 0 : this.viewMode;
+        this.viewMode = this.viewMode > 2 ? 2 : this.viewMode;
+
+        let y = this.currentDate.getFullYear();
+        this.currentName = y + "";
+        this.prevLabel = "";
+        this.nextLabel = "";
+
+        if (this.viewMode <= 0) {
+            this.refreshDatePanel();
+        }
+        else if (this.viewMode == 2) {
+            this.currentName = (y - 6) + " - " + (y + 5);
+            this.yearList = [];
+            for (let i = 0; i < 12; i++) {
+                this.yearList.push(y - 6 + i);
+            }
+        }
     }
 
-    toggle() {
-        this.open = !this.open;
-    }
-
-    private prevMonthName: string = "";
+    private prevLabel: string = "";
     private currentName: string = "";
-    private nextMonthName: string = "";
+    private nextLabel: string = "";
     private dayNames = ["Pz", "Pt", "Sa", "Ça", "Pe", "Cu", "Ct"];
     private monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 
@@ -95,8 +146,8 @@ export class DatePickerComponent {
         var monthDays = new Date(y, m + 1, 0).getDate();
         let endDate = new Date(y, m, monthDays);
 
-        this.prevMonthName = this.getMonthName(m - 1, 3);
-        this.nextMonthName = this.getMonthName(m + 1, 3);
+        this.prevLabel = this.getMonthName(m - 1, 3);
+        this.nextLabel = this.getMonthName(m + 1, 3);
         this.currentName = y + " " + this.getMonthName(m, 3);
 
         let day = startDate.getDay();
@@ -133,6 +184,7 @@ export class DatePickerComponent {
             this.dateRows.push(rowArray);
             ind = ind + 7;
         }
+        this.selectedDateChange.emit(this.selectedDate);
     }
 
     getMonthName(index: number, length: number = 0): string {
@@ -145,6 +197,22 @@ export class DatePickerComponent {
     }
 
     getDateText(date: Date): string {
-        return date.toLocaleDateString();
+        return date ? date.toLocaleDateString() : "";
+    }
+
+    getDate(dateInfo): Date {
+        if (dateInfo) {
+            let timeStamp = (parseInt(dateInfo.substr(6)));
+            let date = new Date(timeStamp);
+            return date;
+        }
+        return null;
+    }
+
+    handleGlobalClick(event: MouseEvent): void {
+        const withinElement = this.elementRef.nativeElement.contains(event.target);
+        if (!this.elementRef.nativeElement.contains(event.target)) {
+            this.open=false;
+        }
     }
 }
